@@ -79,7 +79,6 @@
         font-weight: bold;
         min-height: 110px;
         line-height: 35px;
-        /* flex-direction: column-reverse; */
     }
     
     .debug span {
@@ -143,10 +142,11 @@
                         <el-col :span="24">
                             <div class="debug" v-if="debugFlag">
                                 <span>【显示值】{{resultMsg}}/【类型】{{typeof resultMsg}}</span>
-                                <span>【前位数】{{firstNum}}/【类型】{{typeof resultMsg}}</span>
-                                <span>【后位数】{{lastNum}}/【类型】{{typeof resultMsg}}</span>
-                                <span>【计算是否开始】{{mathStart?"开始":"未开始"}}/【类型】{{typeof resultMsg}}</span>
-                                <span>【计算方式】{{mathfun}}/【类型】{{typeof resultMsg}}</span>
+                                <span>【前位数】{{firstNum}}/【类型】{{typeof firstNum}}</span>
+                                <span>【后位数】{{lastNum}}/【类型】{{typeof lastNum}}</span>
+                                <span>【计算是否开始】{{mathStart?"开始":"未开始"}}/【类型】{{typeof mathStart}}</span>
+                                <span>【计算方式】{{mathfun}}/【类型】{{typeof mathfun}}</span>
+                                <span>【历史运算】{{enterMathFlag?'历史':'新运算'}}/【类型】{{typeof enterMathFlag}}</span>
                             </div>
                         </el-col>
                     </el-row>
@@ -161,6 +161,7 @@
     var app = new Vue({
         el: '#calculator',
         data: {
+            enterMathFlag: false,
             btnVideoFlag: true,
             lengthLimit: true, //位数
             lengthLimitFlag: false, //功能标识
@@ -176,7 +177,6 @@
         created() {
             var _this = this;
             document.addEventListener("keydown", _this.watchKeydown);
-
         },
 
         methods: {
@@ -187,8 +187,15 @@
             },
             numBtn(val) {
                 let _this = this
+
+
                 if (_this.btnVideoFlag) {
                     _this.btnVideo()
+                }
+
+                if (_this.enterMathFlag && !_this.mathStart) {
+                    _this.enterMathFlag = false
+                    _this.resetCalculation()
                 }
 
                 if (_this.lengthLimitFlag == true) {
@@ -200,15 +207,9 @@
                     return
                 }
 
-
-
                 if (_this.mathStart) {
 
                     if (_this.lastNum.indexOf(".") > 0 && val == ".") {
-                        return
-                    }
-
-                    if (_this.lastNum.indexOf(".") > 0 && val == "0") {
                         return
                     }
 
@@ -216,12 +217,14 @@
                         return
                     }
 
-                    if (_this.lastNum == '' && val == '0') {
+                    if (_this.lastNum == '0' && val == '0') {
                         return
                     }
+
                     if (val == "." && _this.lastNum == "") {
                         val = "0."
                     }
+
                     _this.lastNum += val
 
                 } else {
@@ -230,28 +233,17 @@
                         return
                     }
 
-                    if (_this.firstNum.indexOf(".") > 0 && val == "0") {
-                        return
-                    }
-
                     if (_this.firstNum.length > 11) {
                         return
                     }
 
-                    if (_this.firstNum == '' && val == '0') {
+                    if (_this.firstNum == "0" && val == '0') {
                         return
                     }
 
-                    if (_this.firstNum == "0") {
-                        _this.resultMsg = ""
-                        _this.firstNum = ""
-                    }
                     if (val == "." && _this.firstNum == "") {
                         val = "0."
                     }
-
-
-
                     _this.firstNum += val
                 }
 
@@ -263,17 +255,14 @@
                 if (_this.btnVideoFlag) {
                     _this.btnVideo()
                 }
-
-
                 if (val == "clear") {
+                    _this.enterMathFlag = false
                     _this.resetCalculation()
                 }
 
                 if (_this.firstNum == "") {
                     return
                 }
-
-
                 if (_this.lengthLimitFlag == true) {
                     _this.lengthLimitFlag = false
                     _this.resetCalculation()
@@ -284,16 +273,14 @@
                         if (_this.mathStart) {
                             if (_this.lastNum !== "") {
                                 _this.lastNum = _this.DeleteLastCharacter(_this.lastNum)
-                                _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg)
                             } else {
                                 _this.mathfun = ""
                                 _this.mathStart = false
-                                _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg)
                             }
                         } else {
                             _this.firstNum = _this.DeleteLastCharacter(_this.firstNum)
-                            _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg);
                         }
+                        _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg);
                         break
                     case "percentage":
                         _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) / 100 * 1).toFixed(10) + '').replace(/(0+)$/g, "")) + "";
@@ -326,7 +313,6 @@
                             _this.mathfun = "divide"
                         })
                         break;
-
                     case "equal":
                         _this.equal(_this.mathfun)
                         break
@@ -341,43 +327,53 @@
                 let _this = this
                 if (_this.lastNum == "") {
                     _this.laseNum = "1"
-                    _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) * 1).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                    _this.mathStart = false
+                    _this.resultMsg = parseFloat(
+                        (parseFloat(_this.firstNum) * 1).toFixed(10) + ''
+                    ) + '';
                     _this.firstNum = _this.resultMsg
                     _this.lastNum = ''
                     _this.mathfun = ""
                     return
                 }
-
                 // ------------------------------------
                 switch (key) {
                     case 'add':
                         _this.mathStart = false
-                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) + parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.resultMsg = parseFloat(
+                            (parseFloat(_this.firstNum) + parseFloat(_this.lastNum)).toFixed(10)
+                        ) + '';
                         _this.CheckResultMaxLength(_this.resultMsg)
                         break;
 
                     case "min":
                         _this.mathStart = false
-                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) - parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.resultMsg = parseFloat(
+                            (parseFloat(_this.firstNum) - parseFloat(_this.lastNum)).toFixed(10)
+                        ) + '';
                         _this.CheckResultMaxLength(_this.resultMsg)
                         break;
 
                     case "mult":
                         _this.mathStart = false
-                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) * parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.resultMsg = parseFloat(
+                            (parseFloat(_this.firstNum) * parseFloat(_this.lastNum)).toFixed(10)
+                        ) + '';
                         _this.CheckResultMaxLength(_this.resultMsg)
 
                         break;
 
                     case "divide":
+                        if (parseFloat(_this.lastNum) == 0) {
+                            return
+                        }
                         _this.mathStart = false
-                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) / parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.resultMsg = parseFloat((parseFloat(_this.firstNum) / parseFloat(_this.lastNum)).toFixed(10)) + '';
                         _this.CheckResultMaxLength(_this.resultMsg)
                         break;
                 }
 
             },
-
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -387,6 +383,7 @@
              */
             CheckResultMaxLength(result) {
                 let _this = this
+                _this.enterMathFlag = true
                 if (_this.lengthLimit) {
                     if (result.length > 14) {
                         _this.resetCalculation()
@@ -410,7 +407,6 @@
             DeleteLastCharacter(value) {
                 return value.substr(0, value.length - 1);
             },
-
             // --------------------------------------------------------------------------------------------------------------------------
             /**
              * 重置计算
@@ -423,33 +419,28 @@
                 _this.lastNum = ''
                 _this.mathfun = ""
             },
-
-
             /**
              * 整理上一次的结果/优化显示效果
              */
             restorePreconditions(callback) {
                 let _this = this
+                _this.firstNum = parseFloat(_this.firstNum) + ''
+                _this.resultMsg = _this.firstNum
                 if (_this.mathfun) {
                     _this.equal(_this.mathfun)
                 }
                 _this.mathStart = true
+
                 if (_this.mathfun !== "") {
                     return
                 }
-                if (_this.firstNum == "0.") {
-                    _this.resultMsg = '0'
-                }
                 callback()
             },
-
-
             btnVideo() {
                 let audio = new Audio()
                 audio.src = "../public/MP3/8916.mp3"
                 audio.play();
             },
-
             btnSwitch(ketNum) {
                 let _this = this
                 switch (ketNum) {
@@ -465,7 +456,6 @@
                     case 53:
                         _this.mathAction('percentage')
                         break
-
                     case 96:
                         _this.numBtn(0)
                         break
@@ -499,7 +489,6 @@
                     case 110:
                         _this.numBtn('.')
                         break
-
                     case 107:
                         _this.mathAction('add')
                         break
@@ -507,20 +496,15 @@
                     case 109:
                         _this.mathAction('min')
                         break
-
                     case 106:
                         _this.mathAction('mult')
                         break
-
                     case 111:
                         _this.mathAction('divide')
                         break
-
                 }
-
             }
         }
-
     })
 </script>
 
