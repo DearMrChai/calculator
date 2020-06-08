@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="../public/vue.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<style>
+    .el-header,
+    .el-footer {
+        background-color: #B3C0D1;
+        color: #333;
+        text-align: center;
+        line-height: 60px;
+    }
+    
+    .el-aside {
+        background-color: #D3DCE6;
+        color: #333;
+        text-align: center;
+        line-height: 200px;
+    }
+    
+    .el-main {
+        min-width: 500px;
+        background-color: #E9EEF3;
+        color: #333;
+        text-align: center;
+        line-height: 55px;
+    }
+    
+    .el-button {
+        width: 100px;
+    }
+    
+    body>.el-container {
+        margin-bottom: 40px;
+    }
+    
+    .el-container:nth-child(5) .el-aside,
+    .el-container:nth-child(6) .el-aside {
+        line-height: 260px;
+    }
+    
+    .el-container:nth-child(7) .el-aside {
+        line-height: 320px;
+    }
+    
+    .clearfix {
+        width: 430px;
+        text-align: right;
+        margin: 0 auto;
+        font-size: 50px;
+        font-weight: bold;
+        min-height: 110px;
+        display: flex;
+        flex-direction: column-reverse;
+    }
+    
+    .clearfix span {
+        word-break: normal;
+        width: auto;
+        display: block;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow: hidden;
+    }
+    
+    .debug {
+        width: 430px;
+        text-align: right;
+        margin: 0 auto;
+        font-size: 20px;
+        font-weight: bold;
+        min-height: 110px;
+        line-height: 35px;
+        /* flex-direction: column-reverse; */
+    }
+    
+    .debug span {
+        width: 100%;
+        word-break: normal;
+        width: auto;
+        display: block;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow: hidden;
+    }
+</style>
+
+<body>
+    <div id="calculator">
+        <el-container>
+            <el-header>vue计算器（element）</el-header>
+            <el-main @@keyup=>
+                <el-card class="box-card" style="width: 500px; margin: 0 auto;">
+                    <div slot="header" class="clearfix">
+                        <span>{{resultMsg}}</span>
+                    </div>
+                    <el-row :gutter="24">
+                        <el-col :span="19" :offset="5">
+                            <el-switch v-model="btnVideoFlag" inactive-text="按键音"></el-switch>
+                            <el-switch v-model="debugFlag" inactive-text="调试模式"></el-switch>
+                            <el-tooltip class="item" effect="dark" content="默认结果不超过14位" placement="top">
+                                <el-switch v-model="lengthLimit" inactive-text="计算限制"></el-switch>
+                            </el-tooltip>
+                        </el-col>
+
+                        <el-col :span="24">
+                            <el-button type="warning" @click="mathAction('clear')">C</el-button>
+                            <el-button type="warning" @click="mathAction('del')">Del</el-button>
+                            <el-button type="warning" @click="mathAction('percentage')">%</el-button>
+                            <el-button type="warning" @click="mathAction('divide')">÷</el-button>
+                        </el-col>
+                        <el-col :span="24">
+                            <el-button type="primary" @click='numBtn(7)'>7</el-button>
+                            <el-button type="primary" @click='numBtn(8)'>8</el-button>
+                            <el-button type="primary" @click='numBtn(9)'>9</el-button>
+                            <el-button type="warning" @click="mathAction('mult')">x</el-button>
+                        </el-col>
+                        <el-col :span="24">
+                            <el-button type="primary" @click='numBtn(4)'>4</el-button>
+                            <el-button type="primary" @click='numBtn(5)'>5</el-button>
+                            <el-button type="primary" @click='numBtn(6)'>6</el-button>
+                            <el-button type="warning" @click="mathAction('min')">-</el-button>
+                        </el-col>
+                        <el-col :span="24">
+                            <el-button type="primary" @click='numBtn(1)'>1</el-button>
+                            <el-button type="primary" @click='numBtn(2)'>2</el-button>
+                            <el-button type="primary" @click='numBtn(3)'>3</el-button>
+                            <el-button type="warning" @click="mathAction('add')">+</el-button>
+                        </el-col>
+                        <el-col :span="24">
+                            <el-button type="primary" @click='numBtn(0)' style="width: 215px;">0</el-button>
+                            <el-button type="primary" @click='numBtn(".")'>.</el-button>
+                            <el-button type="warning" @click="mathAction('equal')">=</el-button>
+                        </el-col>
+                        <el-col :span="24">
+                            <div class="debug" v-if="debugFlag">
+                                <span>【显示值】{{resultMsg}}/【类型】{{typeof resultMsg}}</span>
+                                <span>【前位数】{{firstNum}}/【类型】{{typeof resultMsg}}</span>
+                                <span>【后位数】{{lastNum}}/【类型】{{typeof resultMsg}}</span>
+                                <span>【计算是否开始】{{mathStart?"开始":"未开始"}}/【类型】{{typeof resultMsg}}</span>
+                                <span>【计算方式】{{mathfun}}/【类型】{{typeof resultMsg}}</span>
+                            </div>
+                        </el-col>
+                    </el-row>
+
+                </el-card>
+
+            </el-main>
+        </el-container>
+    </div>
+</body>
+<script>
+    var app = new Vue({
+        el: '#calculator',
+        data: {
+            btnVideoFlag: true,
+            lengthLimit: true, //位数
+            lengthLimitFlag: false, //功能标识
+            debugFlag: false, //debug
+            resultMsg: '', //计算器显示
+            firstNum: '', //计算方式的前参  后参  
+            lastNum: '', //计算方式的前参  后参  
+            mathStart: false, //计算开始结束标识
+            mathfun: '', //计算方式标识
+            message: 'Hello Vue!',
+        },
+
+        created() {
+            var _this = this;
+            document.addEventListener("keydown", _this.watchEnter);
+
+        },
+
+        methods: {
+            watchEnter(e) {
+                let _this = this
+                let keyNum = window.event ? e.keyCode : e.which; //获取被按下的键值
+
+                console.log(window.event)
+                console.log(e)
+                    //判断如果用户按下了回车键（keycody=13）
+                console.log(keyNum)
+                _this.btnSwitch(keyNum)
+            },
+
+
+
+
+
+            numBtn(val) {
+                let _this = this
+                if (_this.btnVideoFlag) {
+                    _this.btnVideo()
+                }
+
+                if (_this.lengthLimitFlag == true) {
+                    _this.lengthLimitFlag = false
+                    _this.resetCalculation()
+                }
+
+                if (_this.mathfun == "divide" && _this.lastNum == '' && val == 0) {
+                    return
+                }
+
+
+
+                if (_this.mathStart) {
+
+                    if (_this.lastNum.indexOf(".") > 0 && val == ".") {
+                        return
+                    }
+
+                    if (_this.lastNum.indexOf(".") > 0 && val == "0") {
+                        return
+                    }
+
+                    if (_this.lastNum.length > 11) {
+                        return
+                    }
+
+                    if (_this.lastNum == '' && val == '0') {
+                        return
+                    }
+                    if (val == "." && _this.lastNum == "") {
+                        val = "0."
+                    }
+                    _this.lastNum += val
+
+                } else {
+
+                    if (_this.firstNum.indexOf(".") > 0 && val == ".") {
+                        return
+                    }
+
+                    if (_this.firstNum.indexOf(".") > 0 && val == "0") {
+                        return
+                    }
+
+                    if (_this.firstNum.length > 11) {
+                        return
+                    }
+
+                    if (_this.firstNum == '' && val == '0') {
+                        return
+                    }
+
+                    if (_this.firstNum == "0") {
+                        _this.resultMsg = ""
+                        _this.firstNum = ""
+                    }
+                    if (val == "." && _this.firstNum == "") {
+                        val = "0."
+                    }
+
+
+
+                    _this.firstNum += val
+                }
+
+                _this.resultMsg += val
+            },
+
+            mathAction(val) {
+                let _this = this
+                if (_this.btnVideoFlag) {
+                    _this.btnVideo()
+                }
+
+
+                if (val == "clear") {
+                    _this.resetCalculation()
+                }
+
+                if (_this.firstNum == "") {
+                    return
+                }
+
+
+                if (_this.lengthLimitFlag == true) {
+                    _this.lengthLimitFlag = false
+                    _this.resetCalculation()
+                }
+
+                switch (val) {
+                    case "del":
+                        if (_this.mathStart) {
+                            if (_this.lastNum !== "") {
+                                _this.lastNum = _this.DeleteLastCharacter(_this.lastNum)
+                                _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg)
+                            } else {
+                                _this.mathfun = ""
+                                _this.mathStart = false
+                                _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg)
+                            }
+                        } else {
+                            _this.firstNum = _this.DeleteLastCharacter(_this.firstNum)
+                            _this.resultMsg = _this.DeleteLastCharacter(_this.resultMsg);
+                        }
+                        break
+                    case "percentage":
+                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) / 100 * 1).toFixed(10) + '').replace(/(0+)$/g, "")) + "";
+                        _this.firstNum = _this.resultMsg
+                        _this.lastNum = ''
+                        _this.mathfun = ""
+                        break
+
+                    case "add":
+                        _this.restorePreconditions(function() {
+                            _this.resultMsg += "+"
+                            _this.mathfun = "add"
+                        })
+                        break;
+                    case "min":
+                        _this.restorePreconditions(function() {
+                            _this.resultMsg += "-"
+                            _this.mathfun = "min"
+                        })
+                        break;
+                    case "mult":
+                        _this.restorePreconditions(function() {
+                            _this.resultMsg += "×"
+                            _this.mathfun = "mult"
+                        })
+                        break;
+                    case "divide":
+                        _this.restorePreconditions(function() {
+                            _this.resultMsg += "÷"
+                            _this.mathfun = "divide"
+                        })
+                        break;
+
+                    case "equal":
+                        _this.equal(_this.mathfun)
+                        break
+                }
+            },
+
+
+            /**
+             * 用户行为 /等于/加/减/乘/除
+             */
+            equal(key) {
+                let _this = this
+                if (_this.lastNum == "") {
+                    _this.laseNum = "1"
+                    _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) * 1).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                    _this.firstNum = _this.resultMsg
+                    _this.lastNum = ''
+                    _this.mathfun = ""
+                    return
+                }
+
+                // ------------------------------------
+                switch (key) {
+                    case 'add':
+                        _this.mathStart = false
+                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) + parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.CheckResultMaxLength(_this.resultMsg)
+                        break;
+
+                    case "min":
+                        _this.mathStart = false
+                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) - parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.CheckResultMaxLength(_this.resultMsg)
+                        break;
+
+                    case "mult":
+                        _this.mathStart = false
+                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) * parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.CheckResultMaxLength(_this.resultMsg)
+
+                        break;
+
+                    case "divide":
+                        _this.mathStart = false
+                        _this.resultMsg = parseFloat(((parseFloat(_this.firstNum) / parseFloat(_this.lastNum)).toFixed(10) + '').replace(/(0+)$/g, "")) + '';
+                        _this.CheckResultMaxLength(_this.resultMsg)
+                        break;
+                }
+
+            },
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            /**
+             * 检查最大位数显示
+             */
+            CheckResultMaxLength(result) {
+                let _this = this
+                if (_this.lengthLimit) {
+                    if (result.length > 14) {
+                        _this.resetCalculation()
+                        _this.resultMsg = "超过最大位数限制"
+                        _this.lengthLimitFlag = true
+                    } else {
+                        _this.firstNum = result
+                        _this.lastNum = ''
+                        _this.mathfun = ""
+                    }
+                } else {
+                    _this.firstNum = result
+                    _this.lastNum = ''
+                    _this.mathfun = ""
+                }
+            },
+            // --------------------------------------------------------------------------------------------------------------------------
+            /**
+             * 删除最后一位字符
+             */
+            DeleteLastCharacter(value) {
+                return value.substr(0, value.length - 1);
+            },
+
+            // --------------------------------------------------------------------------------------------------------------------------
+            /**
+             * 重置计算
+             */
+            resetCalculation() {
+                let _this = this
+                _this.mathStart = false
+                _this.resultMsg = ''
+                _this.firstNum = ''
+                _this.lastNum = ''
+                _this.mathfun = ""
+            },
+
+
+            /**
+             * 整理上一次的结果/优化显示效果
+             */
+            restorePreconditions(callback) {
+                let _this = this
+                if (_this.mathfun) {
+                    _this.equal(_this.mathfun)
+                }
+                _this.mathStart = true
+                if (_this.mathfun !== "") {
+                    return
+                }
+                if (_this.firstNum == "0.") {
+                    _this.resultMsg = '0'
+                }
+                callback()
+            },
+
+
+            btnVideo() {
+                let audio = new Audio()
+                audio.src = "../public/MP3/8916.mp3"
+                audio.play();
+            },
+
+            btnSwitch(ketNum) {
+                let _this = this
+                switch (ketNum) {
+                    case 8:
+                        _this.mathAction('del')
+                        break
+                    case 13:
+                        _this.mathAction('equal')
+                        break
+                    case 27:
+                        _this.mathAction('clear')
+                        break
+                    case 53:
+                        _this.mathAction('percentage')
+                        break
+
+                    case 96:
+                        _this.numBtn(0)
+                        break
+                    case 97:
+                        _this.numBtn(1)
+                        break
+                    case 98:
+                        _this.numBtn(2)
+                        break
+                    case 99:
+                        _this.numBtn(3)
+                        break
+                    case 100:
+                        _this.numBtn(4)
+                        break
+                    case 101:
+                        _this.numBtn(5)
+                        break
+                    case 102:
+                        _this.numBtn(6)
+                        break
+                    case 103:
+                        _this.numBtn(7)
+                        break
+                    case 104:
+                        _this.numBtn(8)
+                        break
+                    case 105:
+                        _this.numBtn(9)
+                        break
+                    case 110:
+                        _this.numBtn('.')
+                        break
+
+                    case 107:
+                        _this.mathAction('add')
+                        break
+
+                    case 109:
+                        _this.mathAction('min')
+                        break
+
+                    case 106:
+                        _this.mathAction('mult')
+                        break
+
+                    case 111:
+                        _this.mathAction('divide')
+                        break
+
+                }
+
+            }
+        }
+
+    })
+</script>
+
+</html>
