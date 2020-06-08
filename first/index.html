@@ -175,26 +175,16 @@
 
         created() {
             var _this = this;
-            document.addEventListener("keydown", _this.watchEnter);
+            document.addEventListener("keydown", _this.watchKeydown);
 
         },
 
         methods: {
-            watchEnter(e) {
+            watchKeydown(e) {
                 let _this = this
                 let keyNum = window.event ? e.keyCode : e.which; //获取被按下的键值
-
-                console.log(window.event)
-                console.log(e)
-                    //判断如果用户按下了回车键（keycody=13）
-                console.log(keyNum)
                 _this.btnSwitch(keyNum)
             },
-
-
-
-
-
             numBtn(val) {
                 let _this = this
                 if (_this.btnVideoFlag) {
